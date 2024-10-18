@@ -1,4 +1,30 @@
 import pyxel, random
+import serial
+import serial.tools.list_ports as list_ports
+
+PID_MICROBIT = 516
+VID_MICROBIT = 3368
+TIMEOUT = 0.1
+
+
+def find_comport(pid, vid, baud):
+    ''' return a serial port '''
+    ser_port = serial.Serial(timeout=TIMEOUT)
+    ser_port.baudrate = baud
+    ports = list(list_ports.comports())
+    print('scanning ports')
+    for p in ports:
+        print('port: {}'.format(p))
+        try:
+            print('pid: {} vid: {}'.format(p.pid, p.vid))
+        except AttributeError:
+            continue
+        if (p.pid == pid) and (p.vid == vid):
+            print('found target device pid: {} vid: {} port: {}'.format(
+                p.pid, p.vid, p.device))
+            ser_port.port = str(p.device)
+            return ser_port
+
 
 class Jeu:
     def __init__(self):
@@ -23,6 +49,8 @@ class Jeu:
 
         # initialisation des explosions
         self.explosions_liste = []
+        self.micro = find_comport(PID_MICROBIT, VID_MICROBIT, 115200)
+        self.micro.open()
 
         # chargement des images
         pyxel.load("images.pyxres")
@@ -48,6 +76,12 @@ class Jeu:
 
         if pyxel.btnr(pyxel.KEY_SPACE):
             self.tirs_liste.append([self.vaisseau_x, self.vaisseau_y-8])
+        
+        #line = self.micro.readline().decode('utf-8')
+        #if line:
+        #    print(str(line))# If it isn't a blank line
+        #    if "A" in line or "B" in line:
+        #        self.tirs_liste.append([self.vaisseau_x, self.vaisseau_y-8])
 
 
     def tirs_deplacement(self):
